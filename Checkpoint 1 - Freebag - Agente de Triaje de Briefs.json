@@ -1,0 +1,378 @@
+{
+  "name": "Checkpoint 1 - Freebag - Agente de Triaje de Briefs",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        368,
+        592
+      ],
+      "id": "9d65bac4-0450-41dd-b3aa-dbc06d2b0d17",
+      "name": "Chat Trigger",
+      "webhookId": "180a151d-ed86-4b22-ad8e-22d1befa4686"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "[ROL]\nSos el Asistente de Triaje de Briefs de Freebag, un marketplace argentino que conecta marcas y pymes con talento creativo freelance (diseño gráfico, ilustración, fotografía, producción audiovisual, dirección de arte, moda y contenido para redes).\n\n[ÁMBITO]\nTu único trabajo es interpretar mensajes desestructurados de marcas que necesitan un servicio creativo, ordenar la información y registrar el brief para que el equipo de Freebag pueda asignar un freelancer.\nNO tenés permitido: cotizar ni negociar tarifas, prometer plazos de entrega, asignar o recomendar un freelancer por nombre, aceptar cesiones de derechos, gestionar pagos o reembolsos, dar asesoramiento legal ni modificar o borrar registros existentes.\n\n[OBJETIVO OPERATIVO]\nConvertir cada pedido en un brief estructurado con: nombre del contacto, marca, medio de contacto, categoría del servicio, prioridad, presupuesto, plazo, resumen del pedido, próxima acción recomendada y si requiere revisión humana.\n\n[REGLAS DE USO DE HERRAMIENTAS]\n- Usá la herramienta \"Registrar_Brief_Freebag\" solo cuando tengas los 3 datos mínimos: un medio de contacto (email o teléfono), el servicio creativo que necesita y una descripción del pedido.\n- Si falta alguno, hacé UNA sola pregunta clara pidiendo lo que falta y no registres nada todavía.\n- Ejecutá la herramienta una sola vez por brief. No la uses para saludos, consultas generales ni temas ajenos a pedidos creativos.\n- No inventes datos. Si el nombre, la marca, el presupuesto o el plazo no fueron informados, completá \"No informado\".\n- Categorías válidas: Diseño gráfico, Ilustración, Fotografía, Producción audiovisual, Dirección de arte, Moda, Contenido para redes, Otro.\n- Prioridad: Alta (plazo menor a 7 días, presupuesto mayor a USD 1.000 o campaña con fecha de lanzamiento), Media (plazo de 1 a 4 semanas), Baja (sin plazo o consulta exploratoria).\n- Si el mensaje pide varios servicios, registrá como categoría el principal y detallá el resto en el resumen.\n\n[ESCALAMIENTO Y GUARDRAILS]\n- Marcá \"Revisión humana: Sí\" si el presupuesto supera USD 3.000, si piden cesión total de derechos o exclusividad, si es un reclamo sobre un trabajo anterior o si piden un reembolso.\n- Si piden una acción que no tenés permitida (cotizar, prometer fechas, pagar, borrar datos), no la ejecutes y respondé: \"Eso lo tiene que revisar una persona del equipo de Freebag. Ya dejé registrado tu pedido para que te contacten.\"\n- Si el mensaje no tiene relación con un servicio creativo, explicá brevemente que solo gestionás briefs de marcas y no uses la herramienta.\n\n[ESTILO]\n- Español rioplatense, claro, cordial y profesional. Tuteo con voseo.\n- No uses lenguaje inclusivo con terminaciones en -e, -x o @.\n- Respuestas breves: confirmá qué registraste, la categoría y la prioridad, y decí que el equipo se va a contactar. No muestres datos técnicos.",
+          "maxIterations": 6,
+          "returnIntermediateSteps": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        624,
+        592
+      ],
+      "id": "d7d4f839-4d00-4fb4-b18d-4506b6d1f1f8",
+      "name": "AI Agent",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash-lite",
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        512,
+        832
+      ],
+      "id": "341599c0-d765-4413-9bc1-860e3ceea242",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "1SA0XWEvknfBxo4v",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        672,
+        832
+      ],
+      "id": "fdf403ab-dd0e-4204-a8a9-da61f997738e",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Registra un brief creativo nuevo en la planilla \"Briefs Freebag\" de Google Sheets, que es la cola de trabajo que usa el equipo de Freebag para asignar freelancers a las marcas.\n\nUSÁ esta herramienta de forma autónoma cuando una marca, pyme o emprendedor haya pedido un servicio creativo (diseño gráfico, logo, identidad visual, ilustración, fotografía de producto, video, spot, reels, dirección de arte, moda o contenido para redes) Y ya cuentes con los 3 datos mínimos:\n1. Un medio de contacto (email o teléfono).\n2. El servicio que necesita.\n3. Una descripción mínima del pedido (qué, para qué o cuántas piezas).\n\nANTES de ejecutarla:\n- Identificá el servicio principal y asignale una categoría válida.\n- Clasificá la prioridad: Alta (plazo menor a 7 días, presupuesto mayor a USD 1.000 o lanzamiento con fecha), Media (plazo de 1 a 4 semanas), Baja (sin plazo o exploratorio).\n- Redactá un resumen operativo de 1 a 2 líneas.\n- Definí la próxima acción recomendada para el equipo (por ejemplo: \"Buscar 3 fotógrafos de producto disponibles esta semana\").\n- Definí Revision_humana = \"Sí\" si el presupuesto supera USD 3.000, piden cesión total de derechos o exclusividad, es un reclamo o piden reembolso; en cualquier otro caso \"No\".\n\nNO la uses:\n- Si falta alguno de los 3 datos mínimos: primero preguntá.\n- Para saludos, preguntas generales sobre Freebag, freelancers que buscan trabajo o temas ajenos a pedidos creativos.\n- Más de una vez por el mismo brief.\n\nNo inventes información: los campos no informados se completan con \"No informado\".",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "14OY5WLitdjPJvbxGF7bbsbXOA_nPMOF7_KQHB5WqvUs",
+          "mode": "list",
+          "cachedResultName": "Briefs Freebag",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14OY5WLitdjPJvbxGF7bbsbXOA_nPMOF7_KQHB5WqvUs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14OY5WLitdjPJvbxGF7bbsbXOA_nPMOF7_KQHB5WqvUs/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Fecha": "=  {{ $now.toFormat('yyyy-MM-dd HH:mm') }}",
+            "Nombre": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Nombre', ``, 'string') }}",
+            "Marca": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Marca', ``, 'string') }}",
+            "Contacto": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Contacto', ``, 'string') }}",
+            "Plazo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Plazo', ``, 'string') }}",
+            "Presupuesto": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Presupuesto', ``, 'string') }}",
+            "Prioridad": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prioridad', ``, 'string') }}",
+            "Categoria": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Categoria', ``, 'string') }}",
+            "Resumen": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Resumen', ``, 'string') }}",
+            "Proxima accion": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Proxima_accion', ``, 'string') }}",
+            "revision humana": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('revision_humana', ``, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Fecha",
+              "displayName": "Fecha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Nombre",
+              "displayName": "Nombre",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Marca",
+              "displayName": "Marca",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Contacto",
+              "displayName": "Contacto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Categoria",
+              "displayName": "Categoria",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Prioridad",
+              "displayName": "Prioridad",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Presupuesto",
+              "displayName": "Presupuesto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Plazo",
+              "displayName": "Plazo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Resumen",
+              "displayName": "Resumen",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Proxima accion",
+              "displayName": "Proxima accion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "revision humana",
+              "displayName": "revision humana",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        832,
+        832
+      ],
+      "id": "b9431a23-b33e-435e-b180-60131c41c9ee",
+      "name": "Registrar_Brief_Freebag",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "0hbLPxA7iOkcrJQ9",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "santostedin@gmail.com",
+        "subject": "=🤖 Freebag · Log del Agente de Briefs · {{ $now.toFormat('dd/MM HH:mm') }}",
+        "message": "=<h2>🤖 Log de observabilidad · Agente de Triaje de Briefs (Freebag)</h2>\n<p><b>Fecha:</b> {{ $now.toFormat('dd/MM/yyyy HH:mm') }}<br>\n<b>Sesión:</b> {{ $('Chat Trigger').item.json.sessionId }}</p>\n<h3>1. Mensaje recibido</h3>\n<blockquote>{{ $('Chat Trigger').item.json.chatInput }}</blockquote>\n<h3>2. Herramientas que decidió usar el agente ({{ ($json.intermediateSteps || []).length }})</h3>\n<ul>{{ ($json.intermediateSteps || []).map(s => `<li><b>${s.action.tool}</b><br>Datos enviados: ${JSON.stringify(s.action.toolInput)}<br>Resultado: ${JSON.stringify(s.observation).slice(0, 400)}</li>`).join('') || '<li>No ejecutó herramientas: pidió datos faltantes o el mensaje estaba fuera de su ámbito.</li>' }}</ul>\n<h3>3. Respuesta final del agente</h3>\n<blockquote>{{ $json.output }}</blockquote>\n<p style=\"color:#888\">Reporte automático de supervisión humana · Checkpoint 1</p>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1008,
+        592
+      ],
+      "id": "52e27baf-f353-4133-bd15-452d7e904389",
+      "name": "Gmail - Log de Observabilidad",
+      "webhookId": "a84355e2-bc6e-47cc-8857-fccc058c9581",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "UATSuo0dPTyYMfFk",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1f73bf7f-698b-433d-966c-5c827df0e816",
+              "name": "output",
+              "value": "={{ $('AI Agent').item.json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1248,
+        592
+      ],
+      "id": "113434cc-29a3-4a1c-945f-760b45c0b5ca",
+      "name": "Respuesta al chat"
+    },
+    {
+      "parameters": {
+        "content": "## Checkpoint 1 · Freebag\n**Agente de Triaje de Briefs**\n\n- Trigger: Chat Trigger (mensaje libre de la marca)\n- Cerebro: AI Agent en modo **Tools Agent** + Gemini\n- Guardrail: **Max Iterations = 6**\n- Tool lateral: Google Sheets (append) con descripción semántica extensa\n- Observabilidad: Gmail con el Execution Log (intermediate steps)\n\nLineal: trigger, log y respuesta.\nAgéntico: interpretar, clasificar y decidir si registrar.",
+        "height": 300,
+        "width": 420,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        304,
+        224
+      ],
+      "id": "6a2504c0-5cff-4988-bb1b-b1664fc4cc94",
+      "name": "Nota - Arquitectura"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Chat Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Gmail - Log de Observabilidad",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail - Log de Observabilidad": {
+      "main": [
+        [
+          {
+            "node": "Respuesta al chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar_Brief_Freebag": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "f5e0d443-6bea-4351-b6c3-dca479433a6f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b0515dd339ff044cca75ff1de09706af0176ff642a8ae2a07883c8889960f616"
+  },
+  "nodeGroups": [],
+  "id": "lJZVqJBkfg9UhLYX",
+  "tags": []
+}
