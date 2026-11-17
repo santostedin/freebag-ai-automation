@@ -1,0 +1,1915 @@
+{
+  "name": "Checkpoint 4 - Freebag · Integraciones (Gmail + Airtable CRM + Slack)",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {
+          "readStatus": "unread",
+          "q": "-category:promotions -category:social -category:updates"
+        },
+        "options": {}
+      },
+      "id": "fe5afd73-309e-4bd4-9fab-5a0d3a08b9a5",
+      "name": "Gmail Trigger - casilla hola@freebag",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        5584,
+        1632
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "UATSuo0dPTyYMfFk",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e7755618-2afc-49cb-ad78-e89062febe87",
+              "leftValue": "={{ $json.subject ?? '' }}",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              },
+              "rightValue": "Auto-reply"
+            },
+            {
+              "id": "2560ea72-0ec4-442c-a550-4e7f56d44f80",
+              "leftValue": "={{ $json.subject ?? '' }}",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              },
+              "rightValue": "Out of office"
+            },
+            {
+              "id": "a61e256c-bafe-4386-8123-ef9ac017468f",
+              "leftValue": "={{ $json.subject ?? '' }}",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              },
+              "rightValue": "Undeliverable"
+            },
+            {
+              "id": "9eb69b71-12a9-4e60-95b2-de2f0049b344",
+              "leftValue": "={{ $json.subject ?? '' }}",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              },
+              "rightValue": "Respuesta automática"
+            },
+            {
+              "id": "7753f98a-4d46-4ec7-8f4e-c8a4ee23ddad",
+              "leftValue": "={{ $json.from?.value?.[0]?.address ?? $json.from ?? '' }}",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              },
+              "rightValue": "no-reply@"
+            },
+            {
+              "id": "97fb0515-76c0-4d4f-96c5-39997c143304",
+              "leftValue": "={{ $json.from?.value?.[0]?.address ?? $json.from ?? '' }}",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              },
+              "rightValue": "noreply@"
+            },
+            {
+              "id": "45330713-e8b2-486c-9603-753aa9a39152",
+              "leftValue": "={{ $json.from?.value?.[0]?.address ?? $json.from ?? '' }}",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              },
+              "rightValue": "mailer-daemon@"
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "70bf857e-59d5-4fc7-b427-aa09bc404e67",
+      "name": "① IF - ¿Es auto-reply?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        5808,
+        1632
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "9e02ed81-96f4-443f-b52a-1fb0c645f1a0",
+      "name": "Stop - Auto-reply ignorado",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        6048,
+        1456
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "89e9598b-8b68-48c8-9c5f-834827b29866",
+              "name": "From",
+              "value": "={{ String($json.from?.value?.[0]?.address ?? $json.from ?? '').trim().toLowerCase() }}",
+              "type": "string"
+            },
+            {
+              "id": "58f4b850-f33d-434c-900c-593c0828e512",
+              "name": "Subject",
+              "value": "={{ String($json.subject ?? '(sin asunto)').slice(0,200) }}",
+              "type": "string"
+            },
+            {
+              "id": "d12d830d-9e0b-41a4-841d-9c0e9a05c9e5",
+              "name": "BodyText",
+              "value": "={{ String($json.text ?? $json.textPlain ?? $json.snippet ?? '').replace(/\\s+/g,' ').trim().slice(0,2000) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e672a7c3-31ea-4c00-9d29-34254344dc2c",
+      "name": "④ Set - Limpiar y validar payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        6048,
+        1632
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "695a9223-ab60-474b-ad3d-20189e71c29d",
+              "leftValue": "={{ $json.From }}",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              },
+              "rightValue": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"
+            },
+            {
+              "id": "7aa32850-f1e3-42b8-9013-3f8fc0c5989d",
+              "leftValue": "={{ $json.BodyText }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a0e5638d-9ed2-4d7c-beb6-db975069ea9c",
+      "name": "IF - ¿Payload válido? (evita 400)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        6256,
+        1632
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "047fdaea-0979-42b8-975b-14ed49e4d51a",
+              "name": "text",
+              "value": "={{ '⛔ Freebag · Mail descartado por payload inválido (evita Error 400)\\nRemitente: ' + ($json.From || '(vacío)') + '\\nAsunto: ' + $json.Subject }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e071418b-51cb-43e8-8df3-bc4439d8a82d",
+      "name": "Set - Alerta payload inválido",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        6496,
+        1856
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Sos el recepcionista de la casilla de Freebag, un marketplace argentino que conecta marcas con freelancers creativos.\nNo respondas al remitente: solo clasificá.\n\nDATOS LIMPIOS:\nFrom: {{ $json.From }}\nSubject: {{ $json.Subject }}\nBodyText: {{ $json.BodyText }}\n\nTAXONOMÍA CERRADA (no inventes otras):\n- BRIEF: una marca o empresa pide un servicio creativo (diseño, foto, video, contenido, etc.).\n- FREELANCER: un creativo quiere sumarse a Freebag u ofrece su perfil/portfolio.\n- UNKNOWN: cualquier otra cosa o no está claro.\n\nRIESGO:\n- HIGH: reclamos, reembolsos, temas legales/derechos, insultos, montos mayores a USD 2000.\n- MEDIUM: pedidos ambiguos o incompletos.\n- LOW: el resto.\n\nRespondé SOLO JSON válido, sin texto extra:\n{\"intent\":\"BRIEF\",\"confidence\":0.9,\"risk\":\"LOW\",\"nombre\":\"nombre del remitente o vacío\",\"empresa\":\"marca o vacío\",\"reason\":\"motivo en 1 línea\"}"
+      },
+      "id": "834723dc-258c-42ab-b057-9a60141b971a",
+      "name": "AI Triage - Router Freebag",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [
+        6496,
+        1632
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash-lite",
+        "options": {
+          "temperature": 0
+        }
+      },
+      "id": "b160c218-31ab-455e-adc8-149538d78daf",
+      "name": "Gemini (Router · temp 0)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        6592,
+        1776
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "1SA0XWEvknfBxo4v",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const src = $('④ Set - Limpiar y validar payload').first().json;\nconst raw = $json.text ?? $json.output ?? '';\nlet d;\ntry { d = JSON.parse(String(raw).replace(/^```json\\s*/i,'').replace(/```\\s*$/,'').trim()); }\ncatch (e) { d = {}; }\nconst allowed = ['BRIEF','FREELANCER','UNKNOWN'];\nconst intent = allowed.includes(String(d.intent).toUpperCase()) ? String(d.intent).toUpperCase() : 'UNKNOWN';\nconst confidence = Math.max(0, Math.min(1, Number(d.confidence) || 0));\nconst risk = ['LOW','MEDIUM','HIGH'].includes(String(d.risk).toUpperCase()) ? String(d.risk).toUpperCase() : 'HIGH';\nreturn [{ json: {\n  ...src,\n  session_id: src.From,\n  intent, confidence, risk,\n  nombre: String(d.nombre || '').slice(0,80),\n  empresa: String(d.empresa || '').slice(0,80),\n  reason: String(d.reason || 'Salida del router inválida → fallback').slice(0,200)\n}}];"
+      },
+      "id": "e0df9b0e-50e4-4a04-b797-fbfd93020519",
+      "name": "Normalizar Triage",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6720,
+        1632
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "9287c617-03d4-4ca7-8911-31824bdd9385",
+              "leftValue": "={{ Boolean($json.id) }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "72c64d0e-d297-443e-b6fc-84b554395d58",
+      "name": "IF - ¿Contacto existe?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        7168,
+        1632
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "14OY5WLitdjPJvbxGF7bbsbXOA_nPMOF7_KQHB5WqvUs",
+          "mode": "list",
+          "cachedResultName": "Briefs Freebag",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14OY5WLitdjPJvbxGF7bbsbXOA_nPMOF7_KQHB5WqvUs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1072888508,
+          "mode": "list",
+          "cachedResultName": "Memoria",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14OY5WLitdjPJvbxGF7bbsbXOA_nPMOF7_KQHB5WqvUs/edit#gid=1072888508"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "session_id",
+              "lookupValue": "={{ $('Normalizar Triage').first().json.session_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5d0274d2-56b1-4a23-b1b3-07e90b563910",
+      "name": "Buscar memoria por session_id",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        7600,
+        1632
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "0hbLPxA7iOkcrJQ9",
+          "name": "Google Sheets account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $('Normalizar Triage').first().json;\nconst m = $input.all().map(i => i.json).find(r => r && r.session_id) ?? {};\nconst existe = Boolean(m.session_id);\nconst resumen = m.resumen_consolidado || 'Sin memoria previa';\nreturn [{ json: {\n  ...input,\n  memoria_existe: existe,\n  resumen_consolidado: resumen,\n  estado_caso: m.estado_caso || 'NUEVO',\n  datos_clave: m.datos_clave || 'Sin datos previos',\n  contador_mensajes: Number(m.contador_mensajes || 0),\n  // contexto que viaja al Worker (memoria M3 + mensaje actual)\n  input_worker: (existe ? '[Contexto previo del contacto: ' + resumen + ']\\n' : '') + input.BodyText\n}}];"
+      },
+      "id": "e3022518-63d0-4ea0-a1b8-4f2559181681",
+      "name": "Preparar contexto de memoria",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7824,
+        1632
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "b493a8b7-2221-43cd-8bb8-64b60fd59fb6",
+              "leftValue": "={{ $json.risk }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "HIGH"
+            },
+            {
+              "id": "337ec7dd-f60b-4e08-a180-2c17284d403a",
+              "leftValue": "={{ $json.confidence }}",
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              },
+              "rightValue": 0.5
+            },
+            {
+              "id": "7ad56ba1-0697-49e5-9760-9a49cc7fa384",
+              "leftValue": "={{ $json.intent }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "UNKNOWN"
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "750c68d9-0100-45f0-a4d8-cc4324c3acff",
+      "name": "¿Requiere HITL?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        8048,
+        1632
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "f703c34b-73c4-46e9-b2d2-1cb5dd1f588a",
+                    "leftValue": "={{ $json.intent }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "BRIEF"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "BRIEF"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "0f944605-91e9-43d4-be52-eb43437883b1",
+                    "leftValue": "={{ $json.intent }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "FREELANCER"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "FREELANCER"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "fce27ed0-68ed-43c9-90bd-b78365f5aba4",
+      "name": "Switch por intención",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        8256,
+        1744
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "5BkSG63v97mFFhj3",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/5BkSG63v97mFFhj3",
+          "cachedResultName": "M2 - Worker Briefs"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "risk": "={{ $json.risk }}",
+            "confidence": "={{ $json.confidence }}",
+            "intent": "={{ $json.intent }}",
+            "session_id": "={{ $json.session_id }}",
+            "original_input": "={{ $json.input_worker }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "original_input",
+              "displayName": "original_input",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "session_id",
+              "displayName": "session_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "intent",
+              "displayName": "intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "confidence",
+              "displayName": "confidence",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number"
+            },
+            {
+              "id": "risk",
+              "displayName": "risk",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "67112e81-a773-49b7-b8e3-3e5ec2a2e76e",
+      "name": "Ejecutar Worker Briefs",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        8480,
+        1632
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "7tHaXojngrfZYuND",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/7tHaXojngrfZYuND",
+          "cachedResultName": "M2 - Worker Freelancers"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "original_input": "={{ $json.input_worker }}",
+            "session_id": "={{ $json.session_id }}",
+            "intent": "={{ $json.intent }}",
+            "confidence": "={{ $json.confidence }}",
+            "risk": "={{ $json.risk }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "original_input",
+              "displayName": "original_input",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "session_id",
+              "displayName": "session_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "intent",
+              "displayName": "intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "confidence",
+              "displayName": "confidence",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number"
+            },
+            {
+              "id": "risk",
+              "displayName": "risk",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "347a2fa8-7d6d-48d1-8f50-89f21c7b1c62",
+      "name": "Ejecutar Worker Freelancers",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        8480,
+        1824
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4d1cc468-be5d-4758-b5af-a5468d7bdb79",
+              "name": "status",
+              "value": "escalated",
+              "type": "string"
+            },
+            {
+              "id": "8dd1b961-cd99-401b-af90-b058234a27cd",
+              "name": "worker",
+              "value": "HITL",
+              "type": "string"
+            },
+            {
+              "id": "b851642c-05bd-40ab-8c98-3a3916617be9",
+              "name": "requires_human",
+              "value": "={{ true }}",
+              "type": "boolean"
+            },
+            {
+              "id": "1a00c535-9056-4b61-ba0a-040f19104ab9",
+              "name": "respuesta",
+              "value": "=¡Hola{{ $json.nombre ? ' ' + $json.nombre : '' }}! Gracias por escribirnos. Recibimos tu mensaje y una persona del equipo de Freebag lo va a revisar y te responde a la brevedad.\n\nEquipo Freebag",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "daef4d63-ac15-4e50-8a99-1d1665d631ed",
+      "name": "Fallback HITL",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        8480,
+        1456
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const ctx = $('Preparar contexto de memoria').first().json;\nconst w = $json ?? {};\nconst ok = w.status === 'success' && w.respuesta;\nreturn [{ json: {\n  ...ctx,\n  status: w.status || 'error',\n  worker: w.worker || 'DESCONOCIDO',\n  requires_human: Boolean(w.requires_human) || !ok,\n  respuesta: ok || w.status === 'escalated'\n    ? w.respuesta\n    : '¡Hola! Gracias por escribirnos. Un integrante del equipo de Freebag te responde a la brevedad.\\n\\nEquipo Freebag',\n  error_message: w.error ? String(w.error.message || w.error).slice(0,200) : ''\n}}];"
+      },
+      "id": "c10ffe1c-94cd-47f3-8c15-48a6a6673851",
+      "name": "Preparar respuesta final",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        8704,
+        1632
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(i => {\n  const n = Number(i.json.contador_mensajes || 0) + 1;\n  return { json: { ...i.json, contador_mensajes: n, requiere_resumen: n >= 5, fecha_actualizacion: new Date().toISOString() } };\n});"
+      },
+      "id": "71cb7d03-8870-4277-8504-c885f1d19b9b",
+      "name": "Actualizar contador",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        8928,
+        1632
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "6cc39ef4-6c31-47ab-934f-937ee33d7062",
+              "leftValue": "={{ $json.requiere_resumen }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "94fdfec4-f9bd-44a9-9ce6-df688a8dba30",
+      "name": "¿5 o más mensajes?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        9136,
+        1632
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Sos el componente de consolidación de memoria de Freebag. NO respondas al usuario.\nMEMORIA PREVIA: {{ $json.resumen_consolidado }}\nMENSAJE ACTUAL: {{ $json.BodyText }}\nRESPUESTA PROPUESTA: {{ $json.respuesta }}\nGuardá solo datos útiles para futuras interacciones (rubro, presupuesto, plazos, perfil creativo).\nRespondé SOLO JSON válido:\n{\"asunto_principal\":\"\",\"puntos_clave\":[],\"accion_requerida\":\"\",\"estado_caso\":\"\"}"
+      },
+      "id": "535d608d-20be-4035-851c-fa688dd88818",
+      "name": "Summarizer - Gemini",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [
+        9360,
+        1536
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash-lite",
+        "options": {
+          "temperature": 0
+        }
+      },
+      "id": "7bb423ff-58ac-4bb6-9c76-3c55c9c3a054",
+      "name": "Gemini Summarizer",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        9360,
+        1376
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "1SA0XWEvknfBxo4v",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const base = $('Actualizar contador').first().json;\nconst raw = $json.text ?? $json.output ?? '';\nlet x;\ntry { x = JSON.parse(String(raw).replace(/^```json\\s*/i,'').replace(/```\\s*$/,'').trim()); }\ncatch (e) { x = { asunto_principal: base.intent, puntos_clave: [base.Subject], accion_requerida: '', estado_caso: base.estado_caso }; }\nreturn [{ json: { ...base,\n  resumen_consolidado: [x.asunto_principal, ...(x.puntos_clave || []), x.accion_requerida].filter(Boolean).join(' | ').slice(0,1000),\n  datos_clave: JSON.stringify({ puntos_clave: x.puntos_clave || [], accion_requerida: x.accion_requerida || '' }),\n  estado_caso: x.estado_caso || base.estado_caso || 'EN_PROCESO',\n  contador_mensajes: 0 } }];"
+      },
+      "id": "acee4074-dfa0-4f4d-bc91-5e07ed7fe0ee",
+      "name": "Parsear resumen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        9584,
+        1536
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "385887b7-2921-477e-81d4-c3c4dc12235e",
+      "name": "Mantener memoria actual",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        9584,
+        1744
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "14OY5WLitdjPJvbxGF7bbsbXOA_nPMOF7_KQHB5WqvUs",
+          "mode": "list",
+          "cachedResultName": "Briefs Freebag",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14OY5WLitdjPJvbxGF7bbsbXOA_nPMOF7_KQHB5WqvUs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Memoria",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "session_id": "={{ $json.session_id }}",
+            "user_name": "={{ $json.nombre || $json.From }}",
+            "fecha_actualizacion": "={{ $json.fecha_actualizacion }}",
+            "resumen_consolidado": "={{ $json.resumen_consolidado }}",
+            "estado_caso": "={{ $json.estado_caso }}",
+            "datos_clave": "={{ $json.datos_clave }}",
+            "contador_mensajes": "={{ $json.contador_mensajes }}"
+          },
+          "matchingColumns": [
+            "session_id"
+          ],
+          "schema": [
+            {
+              "id": "session_id",
+              "displayName": "session_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "user_name",
+              "displayName": "user_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fecha_actualizacion",
+              "displayName": "fecha_actualizacion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "resumen_consolidado",
+              "displayName": "resumen_consolidado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "estado_caso",
+              "displayName": "estado_caso",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "datos_clave",
+              "displayName": "datos_clave",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "contador_mensajes",
+              "displayName": "contador_mensajes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "9c80a188-376c-4031-9ea0-be86504c441e",
+      "name": "Guardar memoria en Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        9808,
+        1632
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "0hbLPxA7iOkcrJQ9",
+          "name": "Google Sheets account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "14OY5WLitdjPJvbxGF7bbsbXOA_nPMOF7_KQHB5WqvUs",
+          "mode": "list",
+          "cachedResultName": "Briefs Freebag",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14OY5WLitdjPJvbxGF7bbsbXOA_nPMOF7_KQHB5WqvUs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Log",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $now.toISO() }}",
+            "session_id": "={{ $('Actualizar contador').first().json.session_id }}",
+            "intent": "={{ $('Actualizar contador').first().json.intent }}",
+            "confidence": "={{ $('Actualizar contador').first().json.confidence }}",
+            "risk": "={{ $('Actualizar contador').first().json.risk }}",
+            "worker": "={{ $('Actualizar contador').first().json.worker }}",
+            "status": "={{ $('Actualizar contador').first().json.status }}",
+            "requires_human": "={{ $('Actualizar contador').first().json.requires_human }}",
+            "human_decision": "={{ $('Actualizar contador').first().json.requires_human ? 'PENDIENTE' : 'REVISAR BORRADOR' }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "session_id",
+              "displayName": "session_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "intent",
+              "displayName": "intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "confidence",
+              "displayName": "confidence",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "risk",
+              "displayName": "risk",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "worker",
+              "displayName": "worker",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "requires_human",
+              "displayName": "requires_human",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "human_decision",
+              "displayName": "human_decision",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "0987067d-3687-45ca-89ed-410657ce8550",
+      "name": "Guardar log en Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        10016,
+        1632
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "0hbLPxA7iOkcrJQ9",
+          "name": "Google Sheets account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cfc668fc-16dc-469d-9ff4-b3b696c0655a",
+              "name": "to",
+              "value": "={{ $('Actualizar contador').first().json.From }}",
+              "type": "string"
+            },
+            {
+              "id": "b693059e-2453-4de7-9e7e-71b5299ce30c",
+              "name": "subject",
+              "value": "={{ 'Re: ' + $('Actualizar contador').first().json.Subject }}",
+              "type": "string"
+            },
+            {
+              "id": "bee9c3d8-19b5-4439-9ee1-95fdd38c5e84",
+              "name": "body",
+              "value": "={{ $('Actualizar contador').first().json.respuesta }}",
+              "type": "string"
+            },
+            {
+              "id": "49ae15ce-0900-4ce6-9c7a-cdca1c178aaa",
+              "name": "thread_id",
+              "value": "={{ $('Gmail Trigger - casilla hola@freebag').first().json.threadId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "aca73b2c-5905-4f1c-8ee2-e45ab04dda89",
+      "name": "Set - Payload Draft",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        10240,
+        1632
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ $json.subject }}",
+        "message": "={{ $json.body }}",
+        "options": {
+          "threadId": "={{ $json.thread_id }}",
+          "sendTo": "={{ $json.to }}"
+        }
+      },
+      "id": "e76202bb-36e2-4074-a124-51929c44909e",
+      "name": "③ Gmail - Create Draft (HITL)",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        10464,
+        1632
+      ],
+      "webhookId": "7c77ba63-45bc-45e7-b166-0e56677ce1ad",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "UATSuo0dPTyYMfFk",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b76976c0-8e45-46f3-9f0a-05c6ce8be33a",
+              "name": "text",
+              "value": "={{ ($('Actualizar contador').first().json.requires_human ? '⚠️ REQUIERE HUMANO' : '📩 Nuevo caso') + ' · Freebag\\nContacto: ' + $('Actualizar contador').first().json.From + '\\nAsunto: ' + $('Actualizar contador').first().json.Subject + '\\nIntent: ' + $('Actualizar contador').first().json.intent + ' (' + $('Actualizar contador').first().json.confidence + ') · Riesgo: ' + $('Actualizar contador').first().json.risk + '\\nWorker: ' + $('Actualizar contador').first().json.worker + '\\nCRM: ' + ($('② Airtable - Look up contacto').first().json.id ? 'contacto actualizado' : 'contacto nuevo creado') + '\\n✍️ Borrador listo en Gmail para revisión y envío humano' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d17977b4-d87b-4862-8864-715de0810b67",
+      "name": "Set - Payload mínimo Slack",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        10688,
+        1632
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "#freebag-operaciones",
+          "mode": "name"
+        },
+        "text": "={{ $json.text }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "id": "8a1ade48-2721-434a-a51f-059ed274d63f",
+      "name": "Slack - #freebag-operaciones",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        10896,
+        1744
+      ],
+      "webhookId": "a7c97d3e-c520-4243-b655-9106e05e20b2",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "EXd58NerfNq1mP4T",
+          "name": "Slack account 3"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "content": "### ✍️ Human-in-the-loop\nEl agente **nunca envía**: ③ Create Draft deja la respuesta en Borradores (en el mismo hilo) para que una persona la revise y la envíe.\nAntes de Slack, un Set arma un único campo `text` → payload mínimo.",
+        "height": 180,
+        "width": 640,
+        "color": 5
+      },
+      "id": "efb1eacc-d138-4d34-8828-d452bd6a804b",
+      "name": "Nota HITL",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        10176,
+        1856
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "apppEAnw8fpBnEVub",
+          "mode": "id",
+          "cachedResultName": "Freebag CRM"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblIe4yvrQ2baKQqz",
+          "mode": "id",
+          "cachedResultName": "Contactos"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "email": "={{ $('Normalizar Triage').first().json.From }}",
+            "nombre": "={{ $('Normalizar Triage').first().json.nombre }}",
+            "empresa": "={{ $('Normalizar Triage').first().json.empresa }}",
+            "tipo": "={{ $('Normalizar Triage').first().json.intent }}",
+            "estado_lead": "={{ $('Normalizar Triage').first().json.risk === 'HIGH' ? 'Revisión humana' : 'Nuevo' }}",
+            "ultimo_asunto": "={{ $('Normalizar Triage').first().json.Subject }}",
+            "ultima_interaccion": "={{ $now.toISO() }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "nombre",
+              "displayName": "nombre",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "empresa",
+              "displayName": "empresa",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "tipo",
+              "displayName": "tipo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "options",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "estado_lead",
+              "displayName": "estado_lead",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "options",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "ultimo_asunto",
+              "displayName": "ultimo_asunto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "ultima_interaccion",
+              "displayName": "ultima_interaccion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            }
+          ]
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "fc717c72-9b73-4c2c-99bb-ae86300292f6",
+      "name": "Airtable - Create contacto",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        7376,
+        1744
+      ],
+      "credentials": {
+        "airtableOAuth2Api": {
+          "id": "5t2v5i87w05w3ckE",
+          "name": "Airtable account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "apppEAnw8fpBnEVub",
+          "mode": "id",
+          "cachedResultName": "Freebag CRM"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblIe4yvrQ2baKQqz",
+          "mode": "id",
+          "cachedResultName": "Contactos"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.id }}",
+            "tipo": "={{ $('Normalizar Triage').first().json.intent }}",
+            "estado_lead": "={{ $('Normalizar Triage').first().json.risk === 'HIGH' ? 'Revisión humana' : 'Recurrente' }}",
+            "ultimo_asunto": "={{ $('Normalizar Triage').first().json.Subject }}",
+            "ultima_interaccion": "={{ $now.toISO() }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "tipo",
+              "displayName": "tipo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "options",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "estado_lead",
+              "displayName": "estado_lead",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "options",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "ultimo_asunto",
+              "displayName": "ultimo_asunto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "ultima_interaccion",
+              "displayName": "ultima_interaccion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            }
+          ]
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "e0417b66-8e9d-4b34-8b35-4fd7085ba49a",
+      "name": "Airtable - Update contacto",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        7376,
+        1536
+      ],
+      "credentials": {
+        "airtableOAuth2Api": {
+          "id": "5t2v5i87w05w3ckE",
+          "name": "Airtable account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "apppEAnw8fpBnEVub",
+          "mode": "list",
+          "cachedResultName": "Freebag CRM",
+          "cachedResultUrl": "https://airtable.com/apppEAnw8fpBnEVub"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblIe4yvrQ2baKQqz",
+          "mode": "list",
+          "cachedResultName": "Contactos",
+          "cachedResultUrl": "https://airtable.com/apppEAnw8fpBnEVub/tblIe4yvrQ2baKQqz"
+        },
+        "filterByFormula": "={{ \"LOWER({email}) = '\" + $json.From.replace(/'/g,'') + \"'\" }}",
+        "returnAll": false,
+        "limit": 1,
+        "options": {
+          "fields": [
+            "email",
+            "nombre",
+            "empresa",
+            "estado_lead"
+          ]
+        }
+      },
+      "id": "e33b5562-86ec-4d7d-846a-6ce042e10b20",
+      "name": "② Airtable - Look up contacto",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        6944,
+        1632
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableOAuth2Api": {
+          "id": "5t2v5i87w05w3ckE",
+          "name": "Airtable account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "content": "## 🔌 Checkpoint 4 · Freebag — Integraciones avanzadas\nEvoluciona M2 (Manager-Worker) + M3 (memoria en Sheets). Tres herramientas reales vía **OAuth2**:\n- 📧 **Gmail** (casilla de entrada) · 🗂️ **Airtable · Freebag CRM** (tabla Contactos = fuente única de verdad) · 💬 **Slack** (#freebag-operaciones)\n\nGuardrails de la rúbrica: **① IF anti auto-reply · ② Look up antes del Create (409) · ③ Create Draft (HITL) · ④ Set de limpieza + validación (400)**",
+        "height": 200,
+        "width": 900,
+        "color": 4
+      },
+      "id": "5ac0701d-eebc-4611-9e7a-5eb62dc54c70",
+      "name": "Nota General",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        5544,
+        1172
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### 🛡️ Entrada blindada\n① IF en modo **OR** inmediatamente después del trigger → Stop si es auto-reply / out of office / undeliverable / no-reply@.\n④ Set deja **solo From, Subject, BodyText** (sin HTML, firmas ni metadatos) y el IF siguiente valida email y cuerpo → evita el **Error 400**.\nEl trigger además ignora promociones/social/updates.",
+        "height": 220,
+        "width": 640,
+        "color": 3
+      },
+      "id": "c981e9f8-d786-4643-ba52-0c74b71e2c84",
+      "name": "Nota Guardrails",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        5764,
+        1932
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### 🗂️ CRM Airtable · Mínimo privilegio\n**Lectura (pasado):** search por email (filterByFormula), devuelve solo `email, nombre, empresa, estado_lead`.\n**Escritura (futuro):** solo los campos de la tabla Contactos. Scopes OAuth: `data.records:read`, `data.records:write`, `schema.bases:read`, acceso solo a la base Freebag CRM.\n② **Look up** antes de escribir → existe: Update · no existe: Create → evita el **Error 409**.",
+        "height": 220,
+        "width": 700,
+        "color": 6
+      },
+      "id": "1d52a9e0-1976-4a0d-88f3-0ef4e4a72264",
+      "name": "Nota CRM",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        6884,
+        1932
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger - casilla hola@freebag": {
+      "main": [
+        [
+          {
+            "node": "① IF - ¿Es auto-reply?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "① IF - ¿Es auto-reply?": {
+      "main": [
+        [
+          {
+            "node": "Stop - Auto-reply ignorado",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "④ Set - Limpiar y validar payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "④ Set - Limpiar y validar payload": {
+      "main": [
+        [
+          {
+            "node": "IF - ¿Payload válido? (evita 400)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - ¿Payload válido? (evita 400)": {
+      "main": [
+        [
+          {
+            "node": "AI Triage - Router Freebag",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set - Alerta payload inválido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set - Alerta payload inválido": {
+      "main": [
+        [
+          {
+            "node": "Slack - #freebag-operaciones",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini (Router · temp 0)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Triage - Router Freebag",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Triage - Router Freebag": {
+      "main": [
+        [
+          {
+            "node": "Normalizar Triage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar Triage": {
+      "main": [
+        [
+          {
+            "node": "② Airtable - Look up contacto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - ¿Contacto existe?": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Update contacto",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Airtable - Create contacto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar memoria por session_id": {
+      "main": [
+        [
+          {
+            "node": "Preparar contexto de memoria",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar contexto de memoria": {
+      "main": [
+        [
+          {
+            "node": "¿Requiere HITL?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Requiere HITL?": {
+      "main": [
+        [
+          {
+            "node": "Fallback HITL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Switch por intención",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch por intención": {
+      "main": [
+        [
+          {
+            "node": "Ejecutar Worker Briefs",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ejecutar Worker Freelancers",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fallback HITL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ejecutar Worker Briefs": {
+      "main": [
+        [
+          {
+            "node": "Preparar respuesta final",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ejecutar Worker Freelancers": {
+      "main": [
+        [
+          {
+            "node": "Preparar respuesta final",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fallback HITL": {
+      "main": [
+        [
+          {
+            "node": "Preparar respuesta final",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar respuesta final": {
+      "main": [
+        [
+          {
+            "node": "Actualizar contador",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Actualizar contador": {
+      "main": [
+        [
+          {
+            "node": "¿5 o más mensajes?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿5 o más mensajes?": {
+      "main": [
+        [
+          {
+            "node": "Summarizer - Gemini",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mantener memoria actual",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Summarizer": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Summarizer - Gemini",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarizer - Gemini": {
+      "main": [
+        [
+          {
+            "node": "Parsear resumen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parsear resumen": {
+      "main": [
+        [
+          {
+            "node": "Guardar memoria en Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mantener memoria actual": {
+      "main": [
+        [
+          {
+            "node": "Guardar memoria en Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardar memoria en Sheets": {
+      "main": [
+        [
+          {
+            "node": "Guardar log en Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardar log en Sheets": {
+      "main": [
+        [
+          {
+            "node": "Set - Payload Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set - Payload Draft": {
+      "main": [
+        [
+          {
+            "node": "③ Gmail - Create Draft (HITL)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "③ Gmail - Create Draft (HITL)": {
+      "main": [
+        [
+          {
+            "node": "Set - Payload mínimo Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set - Payload mínimo Slack": {
+      "main": [
+        [
+          {
+            "node": "Slack - #freebag-operaciones",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Create contacto": {
+      "main": [
+        [
+          {
+            "node": "Buscar memoria por session_id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Update contacto": {
+      "main": [
+        [
+          {
+            "node": "Buscar memoria por session_id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "② Airtable - Look up contacto": {
+      "main": [
+        [
+          {
+            "node": "IF - ¿Contacto existe?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "c35f389e-1744-49c5-a3cd-5637abee61a7",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b0515dd339ff044cca75ff1de09706af0176ff642a8ae2a07883c8889960f616"
+  },
+  "nodeGroups": [],
+  "id": "f2Pc8N8CqqvaWfgk",
+  "tags": []
+}
